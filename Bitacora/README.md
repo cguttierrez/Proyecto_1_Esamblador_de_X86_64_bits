@@ -32,8 +32,9 @@
 ---                                                                                                                                                                                        
  ### [Martes]
  - **Tareas realizadas:**
- - Se seleccion'o el algoritmo mergesort para la organizacion en orden alfabetico de los nombres y el orden de las notas.
+ - Se selecciono el algoritmo mergesort para la organizacion en orden alfabetico de los nombres y el orden de las notas.
  - Se realizo un diagrama para comprender el algoritmo.
+ - ![Image](https://github.com/user-attachments/assets/2477c53d-6106-42bb-89d2-365f58b93f0d)
  - Se inicio con las pruebas en codigo
  
  - **Problemas encontrados:**
