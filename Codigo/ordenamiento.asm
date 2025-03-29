@@ -227,31 +227,31 @@ fin_strcmp:
 bubble_sort_alfabetico:
     mov rcx, [total_nombres]
     cmp rcx, 1
-    jle fin_bubble_alfa
+    jle fin_bubble_alfabetico
     dec rcx                      ; rcx = total_nombres - 1
-ordenar_alfa:
+ordenar_alfabetico:
     mov rdx, 0
     mov r8, 0                   ; Flag de intercambio
-alfa_loop:
+alfabetico_loop:
     cmp rdx, rcx
-    jge alfa_check
+    jge alfabetico_check
     mov rdi, [nombres + rdx*8]
     mov rsi, [nombres + (rdx+1)*8]
     call strcmp
     cmp rax, 0                ; Si s1 > s2, intercambia
-    jle alfa_no_swap
+    jle alfabetico_no_swap
     mov rax, [nombres + rdx*8]
     mov rbx, [nombres + (rdx+1)*8]
     mov [nombres + rdx*8], rbx
     mov [nombres + (rdx+1)*8], rax
     mov r8, 1
-alfa_no_swap:
+alfabetico_no_swap:
     inc rdx
-    jmp alfa_loop
+    jmp alfabetico_loop
 alfa_check:
     cmp r8, 1
-    je ordenar_alfa
-fin_bubble_alfa:
+    je ordenar_alfabetico
+fin_bubble_alfabetico:
     ret
 ;====================================================================================
 ;====================================================================================
@@ -406,124 +406,5 @@ fin_contar_notas:
 ;====================================================================================
 ;====================================================================================
 
-imprimir_histograma:
-    mov r12, 100           ; Inicia en 100 (etiqueta superior)
 
-fila_loop:
-    cmp r12, 0             ; Mientras la etiqueta sea mayor que 0...
-    jle dibujar_eje        ; Si llegó a 0 o menos, termina y dibuja el eje X
-
-    ; Imprimir la etiqueta de la fila con alineación (4 espacios)
-    mov rdi, r12           ; Pasa el número en RDI (64 bits)
-    call imprimir_numero   ; Se asume que esta rutina imprime el número
-
-    ; Imprimir separador entre etiqueta y bins
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, separador      ; separador db "  ", 0 (doble espacio)
-    mov rdx, 2
-    syscall
-
-    ; Recorrer los 10 bins (columnas)
-    mov rbx, 0             ; Índice del bin
-bins_loop:
-    cmp rbx, 10
-    jge fin_fila           ; Si se han procesado los 10 bins, finaliza la fila
-
-    ; Obtener el recuento del bin y escalarlo multiplicando por 5
-    mov rax, [frec_count + rbx*8]  ; Se usa *8 porque cada bin es un entero de 64 bits
-    imul rax, 5                  ; Escalar el valor
-
-    ; Comparar con la etiqueta actual (en r12)
-    cmp rax, r12
-    jl imprimir_espacio_bin
-
-    ; Imprimir "X"
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, histo_char_x   ; Caracter "X"
-    mov rdx, 1
-    syscall
-    jmp siguiente_bin
-
-imprimir_espacio_bin:
-    ; Imprimir un espacio
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, espacio
-    mov rdx, 1
-    syscall
-
-siguiente_bin:
-    inc rbx
-    jmp bins_loop
-
-fin_fila:
-    ; Imprimir salto de línea al final de la fila
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, salto_linea
-    mov rdx, 1
-    syscall
-
-    sub r12, 5            ; Decrementar la etiqueta en 5
-    jmp fila_loop
-
-dibujar_eje:
-    ; Imprimir la línea de etiquetas del eje X
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, label_eje
-    mov rdx, 39             ; Ajusta según la longitud real de label_eje
-    syscall
-    ret
-;====================================================================================
-;====================================================================================
-;====================================================================================
-;====================================================================================
-
-imprimir_numero:
-    ; Usamos num_buffer para almacenar el número convertido (en forma inversa)
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    mov rsi, num_buffer+15   ; Apunta al final del buffer
-    mov byte [rsi], 0        ; Termina la cadena
-    cmp rdi, 0
-    jne convertir_numero
-    mov byte [rsi-1], '0'
-    dec rsi
-    jmp imprimir_numero_final
-
-convertir_numero:
-convertir_loop:
-    xor rdx, rdx
-    mov rax, rdi
-    mov rbx, 10
-    div rbx              ; Divide RAX entre 10; cociente en RAX, residuo en RDX
-    add dl, '0'
-    dec rsi
-    mov [rsi], dl
-    mov rdi, rax
-    cmp rdi, 0
-    jne convertir_loop
-
-imprimir_numero_final:
-    ; Calcular la longitud de la cadena
-    mov rdx, num_buffer+15
-    sub rdx, rsi         ; longitud = (num_buffer+15) - rsi
-    mov rax, 1           ; syscall: write
-    mov rdi, 1           ; stdout
-    syscall
-
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
-    ret
-;====================================================================================
-;====================================================================================
 
