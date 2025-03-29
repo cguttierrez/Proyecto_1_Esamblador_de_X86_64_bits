@@ -2,6 +2,7 @@
 ;====================================================================================
 section .bss
     buffer resb 8192           ; Buffer para  el archivo 
+    buffer_bin resb 100
     nombres resq 1024          ; punteros 
     almacenamiento resb 8192    ; para guardar los nombres
     fd resq 1               ; Descriptor de archivo
@@ -19,7 +20,10 @@ section .data
     espacio db " ",0
     histo_char_x db 'X'
     separador db "  ", 0
-    label_eje db "	10  20  30  40  50  60  70  80  90 100",10,0
+    label_ejex db "	10  20  30  40  50  60  70  80  90 100",10,0
+    label_ejey db "100",10," 95",10," 90",10," 85",10," 80",10," 75",10," 70",10
+           db " 65",10," 60",10," 55",10," 50",10," 45",10," 40",10," 35",10
+           db " 30",10," 25",10," 20",10," 15",10," 10",10,"  5",10,0
 ;====================================================================================
 ;====================================================================================    
 section .text
@@ -30,7 +34,7 @@ _start:
 
     call contar_intervalos_notas
     
-    call imprimir_histograma
+    call imprimir_frec_count
 
     call bubble_sort_alfabetico
     
@@ -58,7 +62,7 @@ error:
 _almacenamiento:
     ; Abrir el archivo
     mov rdi, filename
-    mov rsi, 0         ; Modo lectura (O_RDONLY)
+    mov rsi, 0         ; O_RDONLY
     mov rax, 2          ; syscall: open
     syscall
     cmp rax, 0
@@ -248,7 +252,7 @@ alfabetico_loop:
 alfabetico_no_swap:
     inc rdx
     jmp alfabetico_loop
-alfa_check:
+alfabetico_check:
     cmp r8, 1
     je ordenar_alfabetico
 fin_bubble_alfabetico:
@@ -320,7 +324,7 @@ imprimir_cadena:
     push rsi
     push rdx
     push rax
-    mov rdi, 1             ; stdout (fd = 1)
+    mov rdi, 1             
     mov rdx, 0             ; Contador de longitud
 contar_longitud:
     cmp byte [rsi + rdx], 0
@@ -354,7 +358,7 @@ contar_intervalos_notas:
     jle fin_contar_notas
 
 limpiar_bin_count:
-    mov dword [frec_count + rdx*4], 0
+    mov qword [frec_count + rdx*8], 0   
     inc rdx
     cmp rdx, 10
     jl limpiar_bin_count
@@ -367,18 +371,20 @@ bucle_contar:
     mov rdi, [nombres + rdx*8]
     call obtener_nota       ; La nota queda en rax
     mov r8, rax             ; r8 = nota actual
-    ; Si la nota es inferior a 10 se asigna al primer bin
-    cmp r8, 10
+    
+    cmp r8, 10 ; Si nota < 10     
     jl forzar_primer_bin
-    ; Si nota >= 100, forzar último bin (índice 9)
+ 
     cmp r8, 100
-    jge forzar_ultimo
-    ; Ajuste: restar 1 para que 10 quede en bin 0, 20 en bin 1, …, 100 en bin 9.
-    dec r8
+    jge forzar_ultimo ;Si nota >= 100
+
+    
+    dec r8 ; resta 1 para tome la posicion correcta
     mov rax, r8
-    ; Guardar el valor actual de rdx en otro registro para luego restaurarlo
-    mov r10, rdx
-    xor rdx, rdx       ; Limpia rdx para la división
+
+    mov r10, rdx     ; Guardar el valor actual de rdx en r10 para restaurarlo luego ya que es utilizado en el proceso de división
+    
+    xor rdx, rdx       ; Limpiar rdx para la división
     mov r9, 10
     div r9             ; rax = (nota-1)/10
     mov r8, rax        ; índice del bin
@@ -393,18 +399,112 @@ forzar_primer_bin:
     mov r8, 0
 
 incrementar_bin:
-    ; Incrementar bin_count[r8]
-    mov eax, [frec_count + r8*4]
-    add eax, 1
-    mov [frec_count + r8*4], eax
+    ; Incrementar frec_count[r8]
+    mov rax, [frec_count + r8*8] 
+    add rax, 1
+    mov [frec_count + r8*8], rax
     inc rdx
     jmp bucle_contar
 
 fin_contar_notas:
     ret
+    
+;====================================================================================
+;====================================================================================
+; Rutina para imprimir el arreglo frec_count de los 10 bins
+
+
+
+imprimir_frec_count:
+    mov rbx, 0         ; índice del bin de 0 a 9
+    mov r10, 10        ; numero total de bins
+
+imprimir_bin_loop:
+    
+    mov rax, [frec_count + rbx*8] ; Carga el valor del bin actual en rax
+
+
+    mov r12, 10
+    mov rsi, buffer_bin   ; Buffer para almacenar la cadena de caracteres que forman el numero de frecuencias
+    call entero_a_ascii ; Convierte el número que está en rax
+    
+    
+    xor r11, r11
+recorrido_char_frecuencia:
+    cmp byte [buffer_bin + r11], 0
+    je escribir_bin
+    inc r11
+    jmp recorrido_char_frecuencia
+
+escribir_bin:
+    mov rax, 1         ; syscall: write
+    mov rdi, 1         ; stdout
+    mov rsi, buffer_bin
+    mov rdx, r11       ; Longitud de la cadena
+    syscall
+
+    ; Imprimir salto de línea
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, salto_linea
+    mov rdx, 1
+    syscall
+
+    inc rbx           ; índice del bin
+    cmp rbx, r10
+    jl imprimir_bin_loop
+    ret
 
 ;====================================================================================
 ;====================================================================================
+; Convertir un entero  a cadena ASCII.
 
 
+entero_a_ascii:
+    push rbx
+    push rcx
+    push rdx
 
+    ; Si el número es 0
+    cmp rax, 0
+    jne convertir_loop
+    mov byte [rsi], ' ' ; para imprimer un espacio en la posicion de su nota
+    mov byte [rsi+1], 0
+    jmp conversion_fin
+	
+; Si el número es diferente de 0
+convertir_loop:
+    xor rcx, rcx         ;contador de dígitos
+convertir_digito:
+    xor rdx, rdx         ; Limpiar rdx para la división
+    div r12              ; Divide rax entre 10; el cociente queda en rax y el residuo en rdx
+    add rdx, '0'         ; se le suma 0 para ASCII
+    mov [rsi + rcx], dl  ; Guarda el byte menos significatico de rdx en buffer_in
+    inc rcx
+    cmp rax, 0
+    jne convertir_digito
+
+    mov byte [rsi + rcx], 0  ; Terminar la cadena con 0 para posteriormente indentificar cuando se termina el numero       
+
+    ; invertir la cadena 
+    mov rbx, 0             ; índice inicial 
+    mov rdx, rcx           ; rdx = número de dígitos
+    dec rdx                ; rdx = índice del último dígito
+invertir_loop:
+    cmp rbx, rdx
+    jge inversion_fin
+    ; Intercambiar [rsi + rbx] y [rsi + rdx]
+    mov al, [rsi + rbx]
+    mov dl, [rsi + rdx]
+    mov [rsi + rbx], dl
+    mov [rsi + rdx], al
+    inc rbx
+    dec rdx
+    jmp invertir_loop
+inversion_fin:
+
+conversion_fin:
+    pop rdx
+    pop rcx
+    pop rbx
+    ret

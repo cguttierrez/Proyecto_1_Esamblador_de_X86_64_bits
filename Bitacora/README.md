@@ -243,12 +243,12 @@ num_check:
 
 - **Tareas realizadas:**
 - se intentó generar un histograma, generando rangos y frecuencias de las notas cada 10 unidades
-- nuevamente se hace uso de la función get_nota para procesarla:
+- nuevamente se hace uso de la función obtener_nota para procesarla:
 ```assembly
- xor rdx, rdx    ; Reiniciar rdx para recorrer las líneas
+ xor rdx, rdx    ;  rdx indice
 bucle_contar:
     cmp rdx, rcx
-    jge fin_contar_notas  ; Si rdx >= total_nombres, terminar
+    jge fin_contar_notas  ; Si rdx >= total_nombres
     mov rdi, [nombres + rdx*8]
     call obtener_nota       ; La nota queda en rax
     mov r8, rax             ; r8 = nota actual
@@ -256,12 +256,12 @@ bucle_contar:
 - se procesa para caracterizarla según su frecuencia, segun el bin(intervalo) bin=(nota−1)/10, además en x86 en una div  RAX contiene el dividendo y rdx contine la parte alta de la división RAX contiene la parte baja (los primeros 64 bits) y RDX contiene la parte alta (los segundos 64 bits).
 ```assembly
 cmp r8, 10
-    jl forzar_primer_bin  ; Si nota < 10, asignar bin 0
+    jl forzar_primer_bin  ; Si nota < 10
 
     cmp r8, 100
-    jge forzar_ultimo  ; Si nota >= 100, asignar bin 9
+    jge forzar_ultimo  ; Si nota >= 100
 
-    dec r8  ; Ajuste: Restamos 1 para que 10 caiga en bin 0, 20 en bin 1, etc.
+    dec r8  ; Ajuste: Resta 1 para que tome la posicion correcta
     mov rax, r8
     mov r10, rdx  ; Guardamos rdx para restaurarlo luego
     xor rdx, rdx  ; Limpiar rdx para la división, esto se hace porque rdx contine la parte alta de la división por eso su valor anterior se almacena en r10 para luego restaurarlo
@@ -282,3 +282,88 @@ incrementar_bin:
 ```
 - **Problemas detectados:**
 - se generan x erroneas y más de las que deberían de existir
+
+ ### Viernes, [28/03/25]
+- **Tareas realizadas:**
+- Se desarrolló un código para poder imprimir en la consola la frecuencia de datos en cada bin, de tal manera que de forma iterativa se leen los valores  en frenc_count y los convierte en ascii.
+- Una vez almacenada correctamente cada numero de frecuencia es impreso, de forma que cada frecuencia se imprime una vez recorricdo todos los caracteres que forman el numero de de una frecuencia es decir hasta encontrar un 0 en buffer_bin.
+
+```assembly
+imprimir_frec_count:
+    mov rbx, 0         ; índice del bin de 0 a 9
+    mov r10, 10        ; numero total de bins
+
+imprimir_bin_loop:
+    
+    mov rax, [frec_count + rbx*8] ; Carga el valor del bin actual en rax
+
+
+    mov r12, 10
+    mov rsi, buffer_bin   ; Buffer para almacenar la cadena de caracteres que forman el numero de frecuencias
+    call entero_a_ascii ; Convierte el número que está en rax
+    
+    
+    xor r11, r11
+recorrido_char_frecuencia:
+    cmp byte [buffer_bin + r11], 0
+    je escribir_bin
+    inc r11
+    jmp recorrido_char_frecuencia
+
+escribir_bin:
+    mov rax, 1         ; syscall: write
+    mov rdi, 1         ; stdout
+    mov rsi, buffer_bin
+    mov rdx, r11       ; Longitud de la cadena
+    syscall
+
+    ; Imprimir salto de línea
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, salto_linea
+    mov rdx, 1
+    syscall
+
+    inc rbx           ; índice del bin
+    cmp rbx, r10
+    jl imprimir_bin_loop
+    ret
+
+```
+
+- En esta parte se hace la conversión a ascii:este descompone cada digito y le suma 0 para convertirlo a ascii, estos se almacenan de manera inversa por lo que hay que invertirlo para tener el numero correcto:
+- por ejemplo: 45/10= 4 y su residuo es igual a 5, por lo que a 5 se le suma "0"(48) para pasarlo a ascii. Luego se almacena el residuo, nuevamente se hace el mismo proceso y se obtiene     un residuo por lo que se alamacena en buffer_bin el 5 en ascii, viendo se de esta manera buffer_bin="5,4,0" por lo que se invierte.
+- la inversión se realiza intercambiando extremos de posición hasta que la posiciones se crucen, en ese momento termina el inversor.
+```assembly
+convertir_loop:
+    xor rcx, rcx         ; contador de dígitos
+convertir_digito:
+    xor rdx, rdx         ; Limpiar rdx para la división
+    div r12              ; Divide rax entre 10; el cociente queda en rax y el residuo en rdx
+    add rdx, '0'         ; se le suma 0 para ASCII
+    mov [rsi + rcx], dl  ; Guarda el byte menos significatico de rdx en buffer_in
+    inc rcx
+    cmp rax, 0
+    jne convertir_digito
+
+    mov byte [rsi + rcx], 0  ; Terminar la cadena con 0 para posteriormente indentificar cuando se termina el numero
+
+    ;invertir la cadena
+    mov rbx, 0             ; índice inicial 
+    mov rdx, rcx           ; rdx = número de dígitos
+    dec rdx                ; rdx = índice del último dígito
+invertir_loop:
+    cmp rbx, rdx
+    jge inversion_fin
+
+    ; Intercambio
+
+    mov al, [rsi + rbx]
+    mov dl, [rsi + rdx]
+    mov [rsi + rbx], dl
+    mov [rsi + rdx], al
+    inc rbx
+    dec rdx
+    jmp invertir_loop
+
+```
