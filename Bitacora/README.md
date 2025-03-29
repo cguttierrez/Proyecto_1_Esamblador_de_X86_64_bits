@@ -45,6 +45,7 @@
 ### Miercoles, [19/03/25]
  - **Tareas realizadas:**
  - Se descartó utilizar el merge sort, y en su lugar se optó por el bubble sort aunque este fuese menos eficiente, razón implementación en código
+ - ![Image](https://github.com/user-attachments/assets/d4afbb13-6b1a-4422-95c6-342d6ae53281)
  - **Problemas encontrados:**
  - Encontrar la manera adecuada para almacenar los nombres y procesarlo con el bubble sort, en el caso de el ordenamiento por iniciales de los nombres y para el caso de los nombres
 
