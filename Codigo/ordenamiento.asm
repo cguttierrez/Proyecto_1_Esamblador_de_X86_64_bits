@@ -44,7 +44,7 @@ section .data
     espacio db " ",0
     histo_char_x db 'X'
     separador db "  ", 0
-    label_ejex db "   10  20  30  40  50  60  70  80  90  100  --> Notas",10,0
+    label_ejex db "    10  20  30  40  50  60  70  80   90   100  --> Notas",10,0
     label_ejey db "100",10," 95",10," 90",10," 85",10," 80",10," 75",10," 70",10
            db " 65",10," 60",10," 55",10," 50",10," 45",10," 40",10," 35",10
            db " 30",10," 25",10," 20",10," 15",10," 10",10,"  5",10,0
@@ -79,7 +79,7 @@ _start:
        mov rax, 1
        mov rdi, 1
        mov rsi, label_ejex
-       mov rdx, 54
+       mov rdx, 57
        syscall
 
 
@@ -481,9 +481,9 @@ imprimir_frec_count:
 imprimir_bin_loop:
     
     mov rax, [frec_count + rbx*8] ; Carga el valor del bin actual en rax
+    binactual:
 
-
-    mov r12, 10
+    
     mov rsi, buffer_bin   ; Buffer para almacenar la cadena de caracteres que forman el numero de frecuencias
     call entero_a_ascii ; Convierte el número que está en rax
     
@@ -517,53 +517,64 @@ escribir_bin:
 ;====================================================================================
 ;====================================================================================
 ; Convertir un entero  a cadena ASCII.
-
-
 entero_a_ascii:
     push rbx
     push rcx
     push rdx
+    push r10            ; Guardamos r10
 
-    ; Si el número es 0
-    cmp rax, 0
-    jne convertir_loop
-    mov byte [rsi], '0' ; para imprimer un espacio en la posicion de su nota
-    mov byte [rsi+1], 0
-    jmp conversion_fin
-	
-; Si el número es diferente de 0
-convertir_loop:
-    xor rcx, rcx         ;contador de dígitos
-convertir_digito:
-    xor rdx, rdx         ; Limpiar rdx para la división
-    div r12              ; Divide rax entre 10; el cociente queda en rax y el residuo en rdx
-    add rdx, '0'         ; se le suma 0 para ASCII
-    mov [rsi + rcx], dl  ; Guarda el byte menos significatico de rdx en buffer_in
-    inc rcx
-    cmp rax, 0
-    jne convertir_digito
+    mov rbx, rax        ; Copiar el número original en rbx
+    
+    cmp rbx, 0
+    je conv_cero
 
-    mov byte [rsi + rcx], 0  ; Terminar la cadena con 0 para posteriormente indentificar cuando se termina el numero       
+    xor rcx, rcx        ; Reiniciar contador de dígitos
 
-    ; invertir la cadena 
-    mov rbx, 0             ; índice inicial 
-    mov rdx, rcx           ; rdx = número de dígitos
-    dec rdx                ; rdx = índice del último dígito
-invertir_loop:
+conv_loop:
+    mov rax, rbx        ; Mover el valor actual a rax para la división
+    binactual_conv_ascii:
+    xor rdx, rdx        ; Limpiar rdx
+    mov r10, 10         ; Divisor = 10
+    div r10             ; rax = rbx / 10, rdx = rbx % 10
+    add rdx, '0'        ; Convertir residuo a carácter ASCII
+    mov [rsi + rcx], dl ; Guardar dígito en el buffer
+    inc rcx             ; Incrementar contador de dígitos
+    mov rbx, rax        ; Actualizar rbx con el cociente
+    cmp rbx, 0
+    dig_ascii:
+    jne conv_loop
+
+    mov byte [rsi + rcx], 0  ; Terminar cadena con nulo
+
+    ; Invertir la cadena (se extrajo en orden inverso)
+    mov rbx, 0             ; Índice inicial
+    mov rdx, rcx           ; rdx = número total de dígitos
+    dec rdx              ; rdx apunta al último dígito
+
+
     cmp rbx, rdx
-    jge inversion_fin
-    ; Intercambiar [rsi + rbx] y [rsi + rdx]
-    mov al, [rsi + rbx]
-    mov dl, [rsi + rdx]
-    mov [rsi + rbx], dl
-    mov [rsi + rdx], al
-    inc rbx
-    dec rdx
-    jmp invertir_loop
-inversion_fin:
+    jge conv_end
+    mov al, [rsi]
+    mov dl, [rsi + 1]
+    mov [rsi], dl
+    mov [rsi + 1], al
+    reverse_ascii:
+  
 
-conversion_fin:
+conv_end:
+    valor_rsi_ascii:
+    pop r10
     pop rdx
     pop rcx
     pop rbx
     ret
+
+conv_cero:
+    mov byte [rsi], '0'
+    mov byte [rsi+1], 0
+    jmp conv_end
+
+
+
+
+
