@@ -64,6 +64,6 @@
     mov rax, 1                  ; Llamada al sistema write
     mov rdi, 1                  ; Descriptor de archivo: salida estándar
     mov rsi, titulo_histograma ; Dirección del título "Ordenamiento por orden alfabético"
-    mov rdx, 13 ; Longitud del título
+    mov rdx, 10 ; Longitud del título
     syscall                     ; Ejecutar llamada al sistema
 %endmacro
