@@ -1,3 +1,4 @@
+%include "macros.inc"
 ;====================================================================================
 ;====================================================================================
 section .bss
@@ -12,18 +13,45 @@ section .bss
 ;====================================================================================
 ;====================================================================================
 section .data
+    ;/////////////////////////////////////////////////////////////////////////////
+   ; Configuraciones de colores para texto para el macro set_color %1
+        color_red db 27, '[31m', 0
+    color_red_len equ $ - color_red
+
+    color_green db 27, '[32m', 0
+    color_green_len equ $ - color_green
+
+    color_yellow db 27, '[33m', 0
+    color_yellow_len equ $ - color_yellow
+
+    color_blue db 27, '[34m', 0
+    color_blue_len equ $ - color_blue
+
+    color_magenta db 27, '[35m', 0
+    color_magenta_len equ $ - color_magenta
+
+    color_cyan db 27, '[36m', 0
+    color_cyan_len equ $ - color_cyan
+
+    color_reset db 27, '[0m', 0
+    color_reset_len equ $ - color_reset
+    ;/////////////////////////////////////////////////////////////////////////////
     filename db "Ruta_datos.txt", 0   ; Archivo de datos
     msg_error db "Error al abrir archivo", 10, 0
     salto_linea db 10, 0 
     ;label_eje db " 10  20  30  40  50  60  70  80  90 100", 10, 0
-    espacios db "   "         ; Tres espacios para separar la etiqueta de las columnas
+    espacios db "    "         ; Tres espacios para separar la etiqueta de las columnas
     espacio db " ",0
     histo_char_x db 'X'
     separador db "  ", 0
-    label_ejex db "	10  20  30  40  50  60  70  80  90 100",10,0
+    label_ejex db "   10  20  30  40  50  60  70  80  90  100  --> Notas",10,0
     label_ejey db "100",10," 95",10," 90",10," 85",10," 80",10," 75",10," 70",10
            db " 65",10," 60",10," 55",10," 50",10," 45",10," 40",10," 35",10
            db " 30",10," 25",10," 20",10," 15",10," 10",10,"  5",10,0
+    titulo_nota_sort db "==============Ordenamiento por nota=============="
+    titulo_alfabetico_sort db "==============Ordenamiento por orden alfabético==============" 
+    titulo_histograma db "Histograma"
+
 ;====================================================================================
 ;====================================================================================    
 section .text
@@ -31,15 +59,49 @@ section .text
 
 _start:
     call _almacenamiento
+    
+    set_color red
+    print_titulo_histograma
+    set_color reset
+
+    print_salto
 
     call contar_intervalos_notas
-    
+   ;imprimir dos espacios
+    print_espacios
+
     call imprimir_frec_count
+
+    ; Imprimir salto de linea
+     print_salto
+
+; Imprimir salto de linea
+       mov rax, 1
+       mov rdi, 1
+       mov rsi, label_ejex
+       mov rdx, 54
+       syscall
+
+
+    ; Imprimir salto de linea
+    print_salto
+
+    set_color red
+    print_titulo_alfabetico
+    set_color reset
+
+    print_salto
 
     call bubble_sort_alfabetico
     
     call imprimir_nombres
-    
+
+    set_color red    
+    print_titulo_nota
+    set_color reset
+
+    print_salto
+
     call bubble_sort_numerico
 
     call imprimir_nombres
@@ -349,46 +411,43 @@ escribir_cadena:
 ;====================================================================================
 ;======================================================================================
 ; recorre el arreglo nombres y cuenta los intervalos de notas.
-
-
 contar_intervalos_notas:
-    xor rdx, rdx          ; rdx = 0
+    xor rbx, rbx          ; rbx = índice para recorrer los nombres
     mov rcx, [total_nombres]
     test rcx, rcx
     jle fin_contar_notas
 
+    ; Limpiar arreglo de bins
+    xor rax, rax
 limpiar_bin_count:
-    mov qword [frec_count + rdx*8], 0   
-    inc rdx
-    cmp rdx, 10
+    mov qword [frec_count + rax*8], 0   
+    inc rax
+    cmp rax, 10
     jl limpiar_bin_count
 
-    xor rdx, rdx    ; Reiniciar rdx para recorrer las líneas
+    xor rbx, rbx         ; Reiniciar rbx para recorrer las líneas
+
 
 bucle_contar:
-    cmp rdx, rcx
+    cmp rbx, rcx
     jge fin_contar_notas
-    mov rdi, [nombres + rdx*8]
+
+    mov rdi, [nombres + rbx*8]
     call obtener_nota       ; La nota queda en rax
     mov r8, rax             ; r8 = nota actual
-    
-    cmp r8, 10 ; Si nota < 10     
+
+    cmp r8, 10            ; Si nota < 10
     jl forzar_primer_bin
  
     cmp r8, 100
-    jge forzar_ultimo ;Si nota >= 100
+    jge forzar_ultimo     ; Si nota >= 100
 
     
-    dec r8 ; resta 1 para tome la posicion correcta
-    mov rax, r8
-
-    mov r10, rdx     ; Guardar el valor actual de rdx en r10 para restaurarlo luego ya que es utilizado en el proceso de división
-    
-    xor rdx, rdx       ; Limpiar rdx para la división
+   mov rax, r8
+    xor rdx, rdx
     mov r9, 10
-    div r9             ; rax = (nota-1)/10
-    mov r8, rax        ; índice del bin
-    mov rdx, r10       ; se restaura rdx (contador)
+    div r9                ; rax = nota / 10
+    mov r8, rax          ; r8 es el índice del bin
     jmp incrementar_bin
 
 forzar_ultimo:
@@ -403,7 +462,7 @@ incrementar_bin:
     mov rax, [frec_count + r8*8] 
     add rax, 1
     mov [frec_count + r8*8], rax
-    inc rdx
+    inc rbx             ; Siguiente elemento
     jmp bucle_contar
 
 fin_contar_notas:
@@ -443,11 +502,11 @@ escribir_bin:
     mov rdx, r11       ; Longitud de la cadena
     syscall
 
-    ; Imprimir salto de línea
+    ; Imprimir dos espacios para alinear con el label x
     mov rax, 1
     mov rdi, 1
-    mov rsi, salto_linea
-    mov rdx, 1
+    mov rsi, espacios
+    mov rdx, 3
     syscall
 
     inc rbx           ; índice del bin
@@ -468,7 +527,7 @@ entero_a_ascii:
     ; Si el número es 0
     cmp rax, 0
     jne convertir_loop
-    mov byte [rsi], ' ' ; para imprimer un espacio en la posicion de su nota
+    mov byte [rsi], '0' ; para imprimer un espacio en la posicion de su nota
     mov byte [rsi+1], 0
     jmp conversion_fin
 	
