@@ -2,6 +2,14 @@
 ;====================================================================================
 ;====================================================================================
 section .bss
+
+    config_buffer resb 1024         ; Buffer para el archivo de configuración
+    nota_aprobacion resq 1          ; Nota de aprobación
+    nota_reposicion resq 1          ; Nota de reposición
+    tamano_grupos resq 1            ; Tamaño de los grupos de notas
+    escala_grafico resq 1           ; Escala del gráfico
+    ordenamiento resb 16            ; Ordenamiento (alfabético/numérico)
+
     buffer resb 8192           ; Buffer para  el archivo 
     buffer_bin resb 100
     nombres resq 1024          ; punteros 
@@ -36,6 +44,8 @@ section .data
     color_reset db 27, '[0m', 0
     color_reset_len equ $ - color_reset
     ;/////////////////////////////////////////////////////////////////////////////
+    section .data
+    filename_config db "Ruta_configuracion.txt", 0   ; Archivo de configuración
     filename db "Ruta_datos.txt", 0   ; Archivo de datos
     msg_error db "Error al abrir archivo", 10, 0
     salto_linea db 10, 0 
@@ -58,6 +68,45 @@ section .text
     global _start
 
 _start:
+
+print_salto
+set_color yellow
+;/////////////////////////////////////////////////////////////////////////////////////
+; Abrir archivo de configuración
+mov rdi, filename_config     ; Nombre del archivo
+mov rsi, 0                   ; Modo: solo lectura
+mov rax, 2                   ; syscall: open
+syscall                      ; Abre el archivo
+mov rbx, rax                 ; Guardar el descriptor
+
+; Verificar si se abrió correctamente
+test rbx, rbx
+jz error
+
+; Leer el contenido completo del archivo (hasta 1024 bytes)
+mov rdi, rbx                 ; Descriptor del archivo
+mov rsi, config_buffer       ; Buffer donde se almacenará el contenido
+mov rdx, 1024                ; Tamaño máximo a leer
+mov rax, 0                   ; syscall: read
+syscall                      ; Se guarda en rax el número de bytes leídos
+
+
+; Imprimir el contenido leído
+mov rdi, 1                   ; File descriptor: stdout
+mov rsi, config_buffer       ; Buffer con el contenido
+mov rdx, rax                ; Número de bytes leídos
+mov rax, 1                   ; syscall: write
+syscall
+
+; Cerrar el archivo de configuración
+mov rdi, rbx                 ; Descriptor del archivo
+mov rax, 3                   ; syscall: close
+syscall
+
+set_color reset
+print_salto
+;/////////////////////////////////////////////////////////////////////////////////////
+
     call _almacenamiento
     
     set_color red
@@ -75,7 +124,7 @@ _start:
     ; Imprimir salto de linea
      print_salto
 
-; Imprimir salto de linea
+; Imprimir eje label
        mov rax, 1
        mov rdi, 1
        mov rsi, label_ejex
@@ -85,7 +134,7 @@ _start:
 
     ; Imprimir salto de linea
     print_salto
-
+;/////////////////////////////////////////////////////////////////////
     set_color red
     print_titulo_alfabetico
     set_color reset
@@ -96,6 +145,8 @@ _start:
     
     call imprimir_nombres
 
+    print_salto
+;////////////////////////////////////////////////////////////////////////
     set_color red    
     print_titulo_nota
     set_color reset
@@ -105,7 +156,8 @@ _start:
     call bubble_sort_numerico
 
     call imprimir_nombres
-    
+    print_salto
+;/////////////////////////////////////////////////////////////////////////////    
     jmp terminar
 
 terminar:
@@ -575,6 +627,6 @@ conv_cero:
     jmp conv_end
 
 
-;hola
+;CAGM
 
 
