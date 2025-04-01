@@ -1,6 +1,8 @@
 # Proyecto_1_Esamblador_de_X86_64_bits
 EL4314 – Arquitectura de Computadras Primer Semestre 2025 Proyecto #1: Esamblador de X86_64 bits
 
+## Referencias.
+[1] Evingtone, "Assembly BUBBLE SORT using Nasm," GitHub, 2021. [Online]. Available: https://gist.github.com/Evin-Ngoa/3431161e46b2125cbecac5eb10e9a5be.
 
 # Descripción del Diseño de Software
 
@@ -34,7 +36,9 @@ leer_nombres:
     jge fin_lectura
     jmp leer_nombres
 ```
+- **Diagrama de flujo del funcionamiento**
 
+![Image](https://github.com/user-attachments/assets/9ea4f43b-6f22-4e4d-94e6-5390fd2a42d3)
 ## 2. Extracción de Notas
 ### Lógica Utilizada:
 El programa busca la palabra clave `nota:` en el archivo y extrae los números que la siguen. Luego, convierte los dígitos ASCII en un valor numérico.
@@ -58,7 +62,8 @@ convertir_digitos:
     inc rsi
     jmp convertir_digitos
 ```
-
+- **Diagrama de flujo del funcionamiento**
+  ![Image](https://github.com/user-attachments/assets/efe4a09d-64d2-42fc-8c13-d401ad904e0f)
 ## 3. Ordenamiento Alfabético (Bubble Sort)
 ### Lógica Utilizada:
 El algoritmo de ordenamiento burbuja compara cada par de nombres consecutivos usando una función llamada `strcmp` la cual obtiene un 1 si la comparación es mayor, -1 si es menor y 0 si son iguales. Si el primero es mayor, intercambia las posiciones en el arreglo `nombres`.
@@ -87,7 +92,13 @@ alfabetico_loop:
     mov [nombres + (rdx+1)*8], rax
     mov r8, 1
 ```
+- **Diagrama de flujo del funcionamiento**
+  
+![Image](https://github.com/user-attachments/assets/01dc5d78-59b9-4810-8891-a460ee20ece2)
 
+- **Diagrama de flujo del funcionamiento de la función creada para comparar letras(strcmp)**
+  ![Image](https://github.com/user-attachments/assets/c8061624-174f-4331-b7d6-a34bfe99734a)
+  
 ## 4. Ordenamiento por Notas (Bubble Sort)
 ### Lógica Utilizada:
 El algoritmo ordena las notas de mayor a menor. Obtiene las notas con `obtener_nota`, las compara y realiza intercambios según sea necesario.
@@ -116,6 +127,10 @@ num_loop:
     mov [nombres + (rdx+1)*8], rax
 ```
 
+- **Diagrama de flujo del funcionamiento**
+  
+![Image](https://github.com/user-attachments/assets/643fbfef-0a73-4784-b8b7-2573df2adfd2)
+
 ## 5. Cálculo de Frecuencias para Histograma
 ### Lógica Utilizada:
 Se dividen las notas en bins de 10 unidades cada uno. Se utiliza la división para determinar a qué bin pertenece cada nota y se incrementa el contador correspondiente.
@@ -133,7 +148,10 @@ mov eax, [frec_count + r8*4]  ; Cargar el valor actual
 add eax, 1  ; Incrementarlo
 mov [frec_count + r8*4], eax  ; Guardar el nuevo valor
 ```
+- **Diagrama de flujo del funcionamiento**
 
+![Image](https://github.com/user-attachments/assets/f5ccd0e1-5524-471e-8bd0-27e6adb0e635)
+  
 ## 6. Impresión de Frecuencias
 ### Lógica Utilizada:
 Se recorre `frec_count`, se convierte cada valor a ASCII y se imprime en la consola.
@@ -151,4 +169,10 @@ recorrido_char_frecuencia:
     jmp recorrido_char_frecuencia
 ```
 
+- **Diagrama de flujo del funcionamiento**
 
+![Image](https://github.com/user-attachments/assets/57834e00-b26a-418c-96d7-d649c414e7f5)
+  
+- **Diagrama de flujo del funcionamiento individual de la conversión de un número a ascii**
+
+  ![Image](https://github.com/user-attachments/assets/f71a104b-4837-4e2f-ae85-2e10d3fc0079)
