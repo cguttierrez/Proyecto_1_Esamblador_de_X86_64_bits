@@ -1,6 +1,10 @@
 # Proyecto_1_Esamblador_de_X86_64_bits
 EL4314 – Arquitectura de Computadras Primer Semestre 2025 Proyecto #1: Esamblador de X86_64 bits
 
+## Repositorio:
+
+
+
 ## Referencias.
 [1] Evingtone, "Assembly BUBBLE SORT using Nasm," GitHub, 2021. [Online]. Available: https://gist.github.com/Evin-Ngoa/3431161e46b2125cbecac5eb10e9a5be.
 
